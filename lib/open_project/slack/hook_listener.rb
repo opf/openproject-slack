@@ -1,6 +1,6 @@
 class OpenProject::Slack::HookListener < Redmine::Hook::Listener
   def controller_wiki_edit_after_save(context = { })
-    # return unless Setting.plugin_openproject_slack['post_wiki_updates'] == '1'
+    return unless OpenProject::Slack.configured?
 
     project = context[:project]
     page = context[:page]
@@ -9,92 +9,92 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
     project_url = "<#{object_url project}|#{escape project}>"
     page_url = "<#{object_url page}|#{page.title}>"
     message = "[#{project_url}] #{page_url} updated by *#{user}*"
-
-    channel = channel_for_project project
-    url = Setting.plugin_openproject_slack['slack_url']
-
-    return if channel.blank? || url.blank?
-
     attachment = nil
+
     if page.content.comments.present?
       attachment = {}
       attachment[:text] = "#{escape page.content.comments}"
     end
 
-    OpenProject::Slack::Notifier.new.speak(message, channel: channel, attachment: attachment)
+    OpenProject::Slack::Notifier.say(
+      text: message,
+      attachments: [attachment].compact,
+      webhook_url: webhook_url_for_project(project)
+    )
   end
 
-  def redmine_slack_issues_new_after_save(context={})
-    issue = context[:issue]
+  def work_package_after_create(context={})
+    return unless OpenProject::Slack.configured?
 
-    channel = channel_for_project issue.project
-    url = Setting.plugin_openproject_slack['slack_url']
+    work_package = context[:work_package]
 
-    return if channel.blank? || url.blank?
-
-    message = "[<#{object_url issue.project}|#{escape issue.project}>] #{escape issue.author} created <#{object_url issue}|#{escape issue}>#{mentions issue.description}"
+    message = "[<#{object_url work_package.project}|#{escape work_package.project}>] #{escape work_package.author} created <#{object_url work_package}|#{escape work_package.to_s}>#{mentions work_package.description}"
 
     attachment = {}
-    attachment[:text] = escape(issue.description) if issue.description.present?
+    attachment[:text] = escape(work_package.description) if work_package.description.present?
     attachment[:fields] = [{
       title: I18n.t("field_status"),
-      value: escape(issue.status.to_s),
+      value: escape(work_package.status.to_s),
       short: true
     }, {
       title: I18n.t("field_priority"),
-      value: escape(issue.priority.to_s),
+      value: escape(work_package.priority.to_s),
       short: true
     }, {
       title: I18n.t("field_assigned_to"),
-      value: escape(issue.assigned_to.to_s),
+      value: escape(work_package.assigned_to.to_s),
       short: true
     }]
 
     attachment[:fields] << {
       title: I18n.t("field_watcher"),
-      value: escape(issue.watcher_users.join(', ')),
+      value: escape(work_package.watcher_users.join(', ')),
       short: true
-    } # if Setting.plugin_redmine_slack['display_watchers'] == 'yes'
+    }
 
-    OpenProject::Slack::Notifier.new.speak(message, channel: channel, attachment: attachment)
+    OpenProject::Slack::Notifier.say(
+      text: message,
+      attachments: [attachment],
+      webhook_url: webhook_url_for_project(work_package.project)
+    )
   end
 
-  def redmine_slack_issues_edit_after_save(context={})
-    issue = context[:issue]
-    journal = context[:journal]
+  def work_package_after_update(context={})
+    return unless OpenProject::Slack.configured?
 
-    channel = channel_for_project(issue.project)
-    url = Setting.plugin_openproject_slack['slack_url']
+    work_package = context[:work_package]
+    journal = work_package.current_journal
 
-    return if channel.blank? || url.blank?
-
-    message = "[<#{object_url issue.project}|#{escape issue.project}>] #{escape journal.user.to_s} updated <#{object_url issue}|#{escape issue}>#{mentions journal.notes}"
+    message = "[<#{object_url work_package.project}|#{escape work_package.project}>] #{escape journal.user.to_s} updated <#{object_url work_package}|#{escape work_package}>#{mentions journal.notes}"
 
     attachment = {}
     attachment[:text] = escape(journal.notes) if journal.notes.present?
 
     attachment[:fields] = journal.details.map do |key, changeset|
-      detail_to_hash(issue, key, changeset)
+      detail_to_hash(work_package, key, changeset)
     end
 
-    OpenProject::Slack::Notifier.new.speak(message, channel: channel, attachment: attachment)
+    OpenProject::Slack::Notifier.say(
+      text: message,
+      attachments: [attachment],
+      webhook_url: webhook_url_for_project(work_package.project)
+    )
   end
 
   private
 
   def escape(message)
-    message.to_s.gsub("&", "&amp;").gsub("<", "&lt;").gsub(">", "&gt;")
+    ERB::Util.html_escape message
   end
 
-  def channel_for_project(project)
-    channel = project.custom_values.
-      joins(:custom_field).
-      find_by(custom_fields: { name: OpenProject::Slack::SLACK_CHANNEL_LABEL })&.
-      value
+  def webhook_url_for_project(project)
+    channel = project.custom_values
+      .joins(:custom_field)
+      .where(custom_fields: { name: OpenProject::Slack::webhook_url_label })
+      .pluck(:value)
+      .first
 
-    channel ||= channel_for_project(project.parent) if project.parent.present?
-
-    channel ||= Setting.plugin_openproject_slack['default_channel']
+    channel ||= webhook_url_for_project(project.parent) if project.parent.present?
 
     channel
   end
@@ -140,7 +140,7 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
     text.scan(/@[a-z0-9][a-z0-9_\-]*/).uniq
   end
 
-  def detail_to_hash(issue, key, changeset)
+  def detail_to_hash(work_package, key, changeset)
     method_name = if key =~ /_id$/
                     key.sub(/_id$/, '')
                   elsif key =~ /attachments_\d+/
@@ -156,7 +156,7 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
     }
 
     value = if key =~ /_id$/
-      escape(issue.send(method_name)) if issue.respond_to?(method_name)
+      escape(work_package.send(method_name)) if work_package.respond_to?(method_name)
     end
 
     value ||= escape(changeset.last)

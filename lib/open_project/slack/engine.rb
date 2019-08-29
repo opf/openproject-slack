@@ -13,9 +13,7 @@ module OpenProject::Slack
              requires_openproject: '>= 6.0.0',
              settings: {
               default: {
-                slack_url: '',
-                username: 'Openproject Notifier',
-                icon: ':see_no_evil:',
+                webhook_url: '',
                 default_channel: ''
               },
               partial: 'settings/slack'
@@ -24,7 +22,5 @@ module OpenProject::Slack
     initializer 'slack.register_hooks' do
       require 'open_project/slack/hook_listener'
     end
-
-    patches [:WorkPackage]
   end
 end

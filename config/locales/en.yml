@@ -1,4 +1,10 @@
 en:
+  slack:
+    default_webhook_url: Default Webhook URL
+    per_project_instructions_html: >
+      You can define custom webhook URLs for each project through the
+      <a href="%{custom_field_path}">%{custom_field_name}</a> custom field
+      which can be set in the project settings.
   field_type: Type
   field_project: Project
   field_subject: Subject
