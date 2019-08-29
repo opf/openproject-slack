@@ -1,60 +1,87 @@
 require 'spec_helper'
-require 'webmock/rspec'
+require 'slack-notifier'
 
-describe WorkPackage do
-  let(:url) { 'https://hooks.slack.com/services' }
+describe WorkPackage, with_settings: { "host_name" => "test.openproject.com", "protocol" => "https" } do
+  let(:user) { FactoryBot.create :admin, firstname: "Peter", lastname: "Putzig" }
+  let(:project) { FactoryBot.create :project_with_types, name: "Parts", identifier: "parts" }
 
-  before do
-    stub_request(:post, url).to_return(status: 200, body: 'ok')
-    Setting.plugin_openproject_slack['slack_url'] = url
+  let(:notifier) do
+    Object.new.tap do |n|
+      def n.post(*args)
+      end
+    end
   end
 
-  context 'when default channel is specified' do
+  describe 'update' do
+    let(:work_package) { FactoryBot.create :work_package, project: project, subject: "Tires" }
+
     before do
-      Setting.plugin_openproject_slack['default_channel'] = 'channel'
+      work_package # create work package before slack is enabled so we only test updates
+
+      allow(::OpenProject::Slack).to receive(:configured?).and_return(true)
     end
 
-    context 'when new work package is created' do
-      let(:new_work_package) { FactoryGirl.build(:work_package) }
-
-      it 'should call slack notifier' do
-        expect_any_instance_of(OpenProject::Slack::Notifier).to receive(:speak)
-        new_work_package.save
-      end
+    let(:update_service) { WorkPackages::UpdateService.new user: user, model: work_package }
+    let(:expected_text) do
+      "[<https://test.openproject.com/projects/#{project.identifier}|#{project.name}>] #{user.name} updated <https://test.openproject.com/work_packages/#{work_package.id}|#{work_package.type.name} ##{work_package.id}: #{work_package.subject}>"
     end
 
-    context 'when existed work package is updated' do
-      let(:work_package) { FactoryGirl.create(:work_package) }
-
-      it 'should call slack notifier' do
-        expect_any_instance_of(OpenProject::Slack::Notifier).to receive(:speak)
-        work_package.touch
-      end
-    end
-  end
-
-  context 'when default channel is not specified' do
     before do
-      Setting.plugin_openproject_slack['default_channel'] = nil
-    end
+      expect(OpenProject::Slack::Notifier).to receive(:say) do |opts|
+        expect(opts[:text]).to eq expected_text
 
-    context 'when new work package is created' do
-      let(:new_work_package) { FactoryGirl.build(:work_package) }
+        field = opts[:attachments].first[:fields].first
 
-      it 'should not call slack notifier' do
-        expect_any_instance_of(OpenProject::Slack::Notifier).not_to receive(:speak)
-        new_work_package.save
+        expect(field[:title]).to eq "Description"
+        expect(field[:value]).to eq work_package.description
       end
     end
 
-    context 'when existed work package is updated' do
-      let(:work_package) { FactoryGirl.create(:work_package) }
+    it "posts an update notification" do
+      res = update_service.call description: "Tires should be round-ish"
 
-      it 'should not call slack notifier' do
-        expect_any_instance_of(OpenProject::Slack::Notifier).not_to receive(:speak)
-        work_package.touch
-      end
+      expect(res).to be_success
     end
   end
 
+  describe 'create' do
+    let(:status) { FactoryBot.create :status }
+    let(:priority) { FactoryBot.create :priority }
+    let(:type) { project.types.first }
+    let(:subject) { "Tires" }
+    let(:description) { "Tires should be round" }
+
+    before do
+      allow(::OpenProject::Slack).to receive(:configured?).and_return(true)
+    end
+
+    let(:create_service) { WorkPackages::CreateService.new user: user }
+
+    before do
+      expect(OpenProject::Slack::Notifier).to receive(:say) do |opts|
+        expect(opts[:attachments].first[:text]).to eq description
+
+        titles = opts[:attachments].first[:fields].map { |f| f[:title] }
+        expect(titles).to eq ["Status", "Priority", "Assigned to", "Watcher"]
+
+        text = opts[:text]
+
+        expect(text).to start_with("[<https://test.openproject.com/projects/#{project.identifier}|#{project.name}>] #{user.name} created <https://test.openproject.com/work_packages/")
+        expect(text).to match /.*\/work_packages\/\d+\|#{type.name} #\d+: #{subject}>$/
+      end
+    end
+
+    it "posts a create notification" do
+      res = create_service.call(
+        subject: subject,
+        description: description,
+        project_id: project.id,
+        status_id: status.id,
+        type_id: type.id,
+        priority_id: priority.id
+      )
+
+      expect(res).to be_success
+    end
+  end
 end

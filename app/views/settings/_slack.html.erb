@@ -1,19 +1,26 @@
 <section class="form--section">
   <div class="form--field">
-    <%= styled_label_tag :slack_url, t(:slack_url) %>
-    <%= styled_text_field_tag 'settings[slack_url]', @settings[:slack_url], size: 30, container_class: '-middle' %>
+    <%= styled_label_tag("settings[webhook_url]", t("slack.default_webhook_url")) %>
+    <div class="form--field-container">
+      <%=
+        styled_text_field_tag(
+          "settings[webhook_url]",
+          Setting.plugin_openproject_slack["webhook_url"],
+          container_class: '-xwide'
+        )
+      %>
+    </div>
   </div>
-  <div class="form--field">
-    <%= styled_label_tag :default_channel, t(:default_channel) %>
-    <%= styled_text_field_tag 'settings[default_channel]', @settings[:default_channel], size: 30, container_class: '-middle' %>
-  </div>
-  <div class="form--field">
-    <%= styled_label_tag :username, t(:username) %>
-    <%= styled_text_field_tag 'settings[username]', @settings[:username], size: 30, container_class: '-slim' %>
-  </div>
-  <div class="form--field">
-    <%= styled_label_tag :icon, t(:icon) %>
-    <%= styled_text_field_tag 'settings[icon]', @settings[:icon], size: 30, container_class: '-slim' %>
-  </div>
-  <%#= call_hook(:view_settings_slack_form) %>
+
+  <span class="form--field-instructions">
+    <%# Creates the custom field if not yet present. %>
+    <% custom_field = OpenProject::Slack.project_custom_field %>
+    <%=
+      t(
+        "slack.per_project_instructions_html",
+        custom_field_url: edit_custom_field_url(custom_field),
+        custom_field_name: custom_field.name
+      )
+    %>
+  </span>
 </section>
