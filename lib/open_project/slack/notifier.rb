@@ -1,35 +1,20 @@
-require 'httpclient'
+require 'slack-notifier'
 
-class OpenProject::Slack::Notifier
-  attr_reader :slack_url, :username, :params
+module OpenProject::Slack::Notifier
+  module_function
 
-  def initialize(url: nil)
-    @slack_url = url || Setting.plugin_openproject_slack['slack_url']
-    raise ArgumentError, 'slack url is blank' if slack_url.blank?
+  def say(text:, attachments: nil, webhook_url: nil)
+    params = default_params.dup.merge(text: text)
+    params[:attachments] = Array(attachments) if attachments.present?
 
-    @username = Setting.plugin_openproject_slack['username']
-    @params = { link_names: 1, username: username }
-
-    icon = Setting.plugin_openproject_slack['icon']
-    if icon && icon.present?
-      icon_key = icon.start_with?(':') ? :icon_emoji : :icon_url
-      params[icon_key] = icon
-    end
-
-    @client = HTTPClient.new
-    @client.ssl_config.cert_store.set_default_paths
-    @client.ssl_config.ssl_version = :auto
+    notifier(webhook_url: webhook_url).post params
   end
 
-  def speak(message, channel: nil, attachment: nil)
-    params[:text] = message
-    params[:channel] = channel if channel.present?
-    params[:attachments] = [attachment] if attachment.present?
+  def notifier(webhook_url: nil)
+    ::Slack::Notifier.new webhook_url.presence || OpenProject::Slack.default_webhook_url
+  end
 
-    begin
-      @client.post(slack_url, { payload: params.to_json })
-    rescue SocketError => e
-      Rails.logger.warn(e)
-    end
+  def default_params
+    @default_params ||= { link_names: 1 }.freeze
   end
 end
