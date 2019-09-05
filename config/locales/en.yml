@@ -1,4 +1,5 @@
 en:
+  label_slack_plugin: Slack Integration
   slack:
     default_webhook_url: Default Webhook URL
     per_project_instructions_html: >

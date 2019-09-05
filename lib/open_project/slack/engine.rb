@@ -8,15 +8,24 @@ module OpenProject::Slack
 
     include OpenProject::Plugins::ActsAsOpEngine
 
-    register 'openproject-slack',
-             author_url: 'https://openproject.org',
-             requires_openproject: '>= 9.0.0',
-             settings: {
-               default: {
-                 webhook_url: ''
-               },
-               partial: 'settings/slack'
-             }
+    register(
+      'openproject-slack',
+      author_url: 'https://openproject.org',
+      requires_openproject: '>= 10.0.0',
+      settings: {
+        default: {
+          webhook_url: ''
+        },
+        partial: 'settings/slack',
+        menu_item: :slack_settings
+      }
+    ) do
+      menu :admin_menu,
+           :slack_settings,
+           { controller: :settings, action: :plugin, id: :openproject_slack },
+           caption: :label_slack_plugin,
+           icon: 'icon2 icon-training-consulting'
+    end
 
     initializer 'slack.register_hooks' do
       require 'open_project/slack/hook_listener'
