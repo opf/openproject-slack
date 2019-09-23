@@ -1,10 +1,15 @@
 class OpenProject::Slack::HookListener < Redmine::Hook::Listener
+  def url_helpers
+    @url_helpers ||= OpenProject::StaticRouting::StaticUrlHelpers.new
+  end
+
   def controller_wiki_edit_after_save(context = { })
-    return unless OpenProject::Slack.configured?
-
     project = context[:project]
-    page = context[:page]
+    webhook_url = project_webhook_url project
 
+    return unless webhook_url.present?
+
+    page = context[:page]
     user = page.content.author
     project_url = "<#{object_url project}|#{escape project}>"
     page_url = "<#{object_url page}|#{page.title}>"
@@ -19,12 +24,15 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
     OpenProject::Slack::Notifier.say(
       text: message,
       attachments: [attachment].compact,
-      webhook_url: webhook_url_for_project(project)
+      webhook_url: webhook_url
     )
   end
 
   def work_package_after_create(context={})
-    return unless OpenProject::Slack.configured?
+    work_package = context[:work_package]
+    webhook_url = project_webhook_url work_package.project
+
+    return unless webhook_url.present?
 
     work_package = context[:work_package]
 
@@ -52,17 +60,15 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
       short: true
     }
 
-    OpenProject::Slack::Notifier.say(
-      text: message,
-      attachments: [attachment],
-      webhook_url: webhook_url_for_project(work_package.project)
-    )
+    OpenProject::Slack::Notifier.say text: message, attachments: [attachment], webhook_url: webhook_url
   end
 
   def work_package_after_update(context={})
-    return unless OpenProject::Slack.configured?
-
     work_package = context[:work_package]
+    webhook_url = project_webhook_url work_package.project
+
+    return unless webhook_url.present?
+
     journal = work_package.current_journal
 
     message = "[<#{object_url work_package.project}|#{escape work_package.project}>] #{escape journal.user.to_s} updated <#{object_url work_package}|#{escape work_package}>#{mentions journal.notes}"
@@ -77,7 +83,7 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
     OpenProject::Slack::Notifier.say(
       text: message,
       attachments: [attachment],
-      webhook_url: webhook_url_for_project(work_package.project)
+      webhook_url: webhook_url
     )
   end
 
@@ -87,14 +93,15 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
     ERB::Util.html_escape message
   end
 
-  def webhook_url_for_project(project)
+  def project_webhook_url(project)
     url = project.custom_values
       .joins(:custom_field)
       .where(custom_fields: { name: OpenProject::Slack::webhook_url_label })
       .pluck(:value)
       .first
 
-    url ||= webhook_url_for_project(project.parent) if project.parent.present?
+    url ||= project_webhook_url(project.parent) if project.parent.present?
+    url ||= OpenProject::Slack.default_webhook_url
 
     url
   end
@@ -111,19 +118,12 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
   end
 
   def object_url(obj)
-    if Setting.host_name.to_s =~ /\A(https?\:\/\/)?(.+?)(\:(\d+))?(\/.+)?\z/i
-      host, port, prefix = $2, $4, $5
-      Rails.application.routes.url_for(obj.event_url({
-        host: host,
-        protocol: Setting.protocol,
-        port: port,
-        script_name: prefix
-      }))
+    if obj.is_a? Project
+      url_helpers.project_url obj
+    elsif obj.is_a? WorkPackage
+      url_helpers.work_package_url obj
     else
-      Rails.application.routes.url_for(obj.event_url({
-        host: Setting.host_name,
-        protocol: Setting.protocol
-      }))
+      url_helpers.url_for obj.event_url
     end
   end
 
