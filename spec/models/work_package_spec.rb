@@ -18,7 +18,7 @@ describe WorkPackage, with_settings: { "host_name" => "test.openproject.com", "p
     before do
       work_package # create work package before slack is enabled so we only test updates
 
-      allow(::OpenProject::Slack).to receive(:configured?).and_return(true)
+      allow(::OpenProject::Slack).to receive(:default_webhook_url).and_return("https://foo.bar.com/webhook/42")
     end
 
     let(:update_service) { WorkPackages::UpdateService.new user: user, model: work_package }
@@ -52,7 +52,7 @@ describe WorkPackage, with_settings: { "host_name" => "test.openproject.com", "p
     let(:description) { "Tires should be round" }
 
     before do
-      allow(::OpenProject::Slack).to receive(:configured?).and_return(true)
+      allow(::OpenProject::Slack).to receive(:default_webhook_url).and_return("https://foo.bar.com/webhook/42")
     end
 
     let(:create_service) { WorkPackages::CreateService.new user: user }
