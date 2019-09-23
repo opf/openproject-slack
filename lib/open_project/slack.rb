@@ -20,7 +20,7 @@ module OpenProject
       end
 
       def set_enabled(value)
-        Setting.plugin_openproject_slack = settings.merge enabled: !!value
+        Setting.plugin_openproject_slack = settings.merge "enabled" => !!value
       end
 
       def enabled?
