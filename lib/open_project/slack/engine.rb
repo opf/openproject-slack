@@ -25,7 +25,7 @@ module OpenProject::Slack
            :slack_settings,
            { controller: '/settings', action: :plugin, id: :openproject_slack },
            caption: :label_slack_plugin,
-           icon: 'icon2 icon-training-consulting',
+           icon: 'icon2 icon-slack',
            if: ->(*) { ::OpenProject::Slack.enabled? }
     end
 
