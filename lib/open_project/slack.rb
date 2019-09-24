@@ -24,7 +24,16 @@ module OpenProject
       end
 
       def enabled?
-        !!settings["enabled"]
+        value = settings["enabled"]
+
+        case value
+        when true, false
+          value
+        when nil
+          false
+        else
+          value.to_s.to_bool
+        end
       end
 
       def disabled?
