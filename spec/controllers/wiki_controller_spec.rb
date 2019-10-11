@@ -68,7 +68,7 @@ describe WikiController, type: :controller do
         :wiki_content, page_id: @existing_page.id, author_id: @user.id
       )
 
-      allow(::OpenProject::Slack).to receive(:configured?).and_return(true)
+      allow(::OpenProject::Slack).to receive(:default_webhook_url).and_return("https://foo.bar.com/webhook/42")
 
       expect(OpenProject::Slack::Notifier).to receive(:say) do |opts|
         expect(opts[:text]).to eq expected_text

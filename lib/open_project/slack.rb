@@ -8,7 +8,40 @@ module OpenProject
       end
 
       def default_webhook_url
-        Setting.plugin_openproject_slack["webhook_url"]
+        settings["webhook_url"]
+      end
+
+      def enable!
+        set_enabled true
+      end
+
+      def disable!
+        set_enabled false
+      end
+
+      def set_enabled(value)
+        Setting.plugin_openproject_slack = settings.merge "enabled" => !!value
+      end
+
+      def enabled?
+        value = settings["enabled"]
+
+        case value
+        when true, false
+          value
+        when nil
+          false
+        else
+          value.to_s.to_bool
+        end
+      end
+
+      def disabled?
+        !enabled?
+      end
+
+      def settings
+        Setting.plugin_openproject_slack
       end
 
       def configured?
