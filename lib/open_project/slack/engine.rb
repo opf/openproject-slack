@@ -14,7 +14,7 @@ module OpenProject::Slack
       requires_openproject: '>= 10.0.0',
       settings: {
         default: {
-          enabled: false,
+          enabled: true,
           webhook_url: ''
         },
         partial: 'settings/slack',
