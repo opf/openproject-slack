@@ -71,7 +71,7 @@ class OpenProject::Slack::HookListener < Redmine::Hook::Listener
 
     return unless webhook_url.present?
 
-    journal = work_package.current_journal
+    journal = work_package.last_journal
 
     message = "[<#{object_url work_package.project}|#{escape work_package.project}>] #{escape journal.user.to_s} updated <#{object_url work_package}|#{escape work_package}>#{mentions journal.notes}"
 
