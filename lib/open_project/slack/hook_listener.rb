@@ -1,6 +1,6 @@
 require 'open_project/slack/notifier'
 
-class OpenProject::Slack::HookListener < Redmine::Hook::Listener
+class OpenProject::Slack::HookListener < OpenProject::Hook::Listener
   def url_helpers
     @url_helpers ||= OpenProject::StaticRouting::StaticUrlHelpers.new
   end
