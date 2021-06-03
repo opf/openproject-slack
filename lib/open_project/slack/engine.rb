@@ -14,8 +14,8 @@ module OpenProject::Slack
       requires_openproject: '>= 10.0.0',
       settings: {
         default: {
-          enabled: true,
-          webhook_url: ''
+          "enabled" => true,
+          "webhook_url" => ''
         },
         partial: 'settings/slack',
         menu_item: :slack_settings
@@ -23,7 +23,7 @@ module OpenProject::Slack
     ) do
       menu :admin_menu,
            :slack_settings,
-           { controller: '/settings', action: :plugin, id: :openproject_slack },
+           { controller: '/admin/settings', action: :show_plugin, id: :openproject_slack },
            caption: :label_slack_plugin,
            icon: 'icon2 icon-slack',
            if: ->(*) { ::OpenProject::Slack.enabled? }
