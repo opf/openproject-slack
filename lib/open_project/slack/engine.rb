@@ -26,7 +26,7 @@ module OpenProject::Slack
            { controller: '/admin/settings', action: :show_plugin, id: :openproject_slack },
            caption: :label_slack_plugin,
            icon: 'icon2 icon-slack',
-           if: ->(*) { ::OpenProject::Slack.enabled? }
+           if: ->(*) { User.current.admin? && ::OpenProject::Slack.enabled? }
     end
 
     initializer 'slack.register_hooks' do
