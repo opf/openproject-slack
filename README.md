@@ -18,16 +18,20 @@ end
 
 ## Configuration
 
-Once the plugin is installed you can configure it under [/settings/plugin/openproject_slack](http://localhost:3000/settings/plugin/openproject_slack).![global-slack-settings](docs/global-slack-settings.png)
+Once the plugin is installed you can configure it under [/admin/settings/plugin/openproject_slack](http://localhost:3000/settings/plugin/openproject_slack).![global-slack-settings](docs/global-slack-settings.png)
 
 There you configure the Slack [incoming webhook URL](https://api.slack.com/messaging/webhooks) you want to use by default.
 
 You can customize this on a per-project basis using the project settings of each project.
 
-![project-slack-settings](docs/project-slack-settings.png)
+![project-slack-settings](docs/slack-project-settings-webhook-url.png)
 
-You can see the *Slack Webhook URL* setting right after the project name. Insert your URL there.
+You can see the *Slack Webhook URL* setting right at the bottom of the page. Insert your URL there.
 If none is set the global defined before is used.
+
+Before you can set this per project, you need to enable the "Slack Webhook URL" custom field for the project in the project attribute settings.
+
+![slack-project-custom-field](docs/enable-slack-custom-field-in-project-attributes.png)
 
 ## Issue Tracker
 
