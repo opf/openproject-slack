@@ -58,7 +58,8 @@ module OpenProject
       end
 
       def project_custom_field
-        CustomField.find_or_create_by project_custom_field_params
+        @project_custom_field ||= CustomField.find_by(name: webhook_url_label) ||
+                                  CustomField.create(project_custom_field_params)
       end
     end
   end
