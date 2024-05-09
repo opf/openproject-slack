@@ -17,10 +17,11 @@
   <span class="form--field-instructions">
     <%# Creates the custom field if not yet present. %>
     <% custom_field = OpenProject::Slack.project_custom_field %>
+    <% edit_url = edit_admin_settings_project_custom_field_path custom_field %>
     <%=
       t(
         "slack.per_project_instructions_html",
-        custom_field_url: edit_custom_field_url(custom_field),
+        custom_field_url: edit_url,
         custom_field_name: custom_field.name
       )
     %>

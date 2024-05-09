@@ -52,7 +52,8 @@ module OpenProject
         {
           name: webhook_url_label,
           type: 'ProjectCustomField',
-          field_format: 'string'
+          field_format: 'string',
+          custom_field_section_id: CustomFieldSection.first.id
         }
       end
 

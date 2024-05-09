@@ -7,7 +7,7 @@ module OpenProject::Slack::Notifier
     params = default_params.dup.merge(text: text)
     params[:attachments] = Array(attachments) if attachments.present?
 
-    notifier(webhook_url: webhook_url).post params
+    SlackNotificationJob.perform_later params:, webhook_url:
   end
 
   def notifier(webhook_url: nil)
