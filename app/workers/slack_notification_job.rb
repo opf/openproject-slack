@@ -33,12 +33,14 @@ class SlackNotificationJob < ApplicationJob
 
   def perform(params:, webhook_url:)
     if webhook_url.blank?
-      OpenProject.logger.error "Slack webhook URL not defined"
+      OpenProject.logger.warn "Slack webhook URL not defined"
 
       return
     end
 
     notifier(webhook_url: webhook_url).post params
+  rescue Slack::Notifier::APIError => e
+    OpenProject.logger.warn "Error posting to Slack: #{e.message}"
   end
 
   def notifier(webhook_url: nil)
