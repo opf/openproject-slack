@@ -1,3 +1,11 @@
+<%=
+  render Primer::OpenProject::PageHeader.new do |header|
+    header.with_title { t(:label_slack_plugin) }
+    header.with_breadcrumbs([{ href: admin_index_path, text: t("label_administration") },
+                             t(:label_slack_plugin)])
+  end
+%>
+
 <section class="form--section">
   <input type="hidden" name="settings[enabled]" value="1"/>
 
