@@ -38,6 +38,13 @@ class SlackNotificationJob < ApplicationJob
       return
     end
 
+    # prevent https://community.openproject.org/work_packages/56435/activity
+    if !URI(webhook_url).respond_to?(:request_uri)
+      OpenProject.logger.warn("Slack webhook URL is misconfigured: #{webhook_url}")
+
+      return
+    end
+
     notifier(webhook_url: webhook_url).post params
   rescue Slack::Notifier::APIError => e
     OpenProject.logger.warn "Error posting to Slack: #{e.message}"

@@ -52,14 +52,14 @@ module OpenProject
         {
           name: webhook_url_label,
           type: 'ProjectCustomField',
-          field_format: 'string',
+          field_format: 'link',
+          regex: "^[ -~]*$", # only ASCII chars, because later URI.parse will not accept it
           custom_field_section_id: CustomFieldSection.first.id
         }
       end
 
       def project_custom_field
-        @project_custom_field ||= CustomField.find_by(name: webhook_url_label) ||
-                                  CustomField.create(project_custom_field_params)
+        CustomField.find_by(name: webhook_url_label) || CustomField.create(project_custom_field_params)
       end
     end
   end
