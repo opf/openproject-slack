@@ -53,7 +53,7 @@ module OpenProject
           name: webhook_url_label,
           type: 'ProjectCustomField',
           field_format: 'link',
-          regex: "^[ -~]*$", # only ASCII chars, because later URI.parse will not accept it
+          regexp: "^[ -~]*$", # only ASCII chars, because later URI.parse will not accept it
           custom_field_section_id: CustomFieldSection.first.id
         }
       end

@@ -12,15 +12,16 @@ class OpenProject::Slack::HookListener < OpenProject::Hook::Listener
     return unless webhook_url.present?
 
     page = context[:page]
-    user = page.content.author
+    user = page.author
     project_url = "<#{object_url project}|#{escape project}>"
     page_url = "<#{object_url page}|#{page.title}>"
     message = "[#{project_url}] #{page_url} updated by *#{user}*"
     attachment = nil
+    comments = page.journals.last.notes
 
-    if page.content.comments.present?
+    if comments.present?
       attachment = {}
-      attachment[:text] = "#{escape page.content.comments}"
+      attachment[:text] = "#{escape comments}"
     end
 
     OpenProject::Slack::Notifier.say(

@@ -1,40 +1,29 @@
-<%=
-  render Primer::OpenProject::PageHeader.new do |header|
-    header.with_title { t(:label_slack_plugin) }
-    header.with_breadcrumbs([{ href: admin_index_path, text: t("label_administration") },
-                             t(:label_slack_plugin)])
-  end
-%>
-
 <div id="settings">
-  <%= styled_form_tag({controller: '/admin/settings', action: 'update_plugin' }) do %>
-    <input type="hidden" name="settings[enabled]" value="1"/>
+  <input type="hidden" name="settings[enabled]" value="1"/>
 
-    <div class="form--field">
-      <%= styled_label_tag("settings[webhook_url]", t("slack.default_webhook_url")) %>
-      <div class="form--field-container">
-        <%=
-        styled_text_field_tag(
-          "settings[webhook_url]",
-          Setting.plugin_openproject_slack["webhook_url"],
-          container_class: '-xwide',
-          type: 'url',
-          pattern: "[ -~]*",
-          title: t("slack.only_ascii_chars_url"),
-        )
-        %>
-      </div>
+  <div class="form--field">
+    <%= styled_label_tag("settings[webhook_url]", t("slack.default_webhook_url")) %>
+    <div class="form--field-container">
+      <%=
+      styled_text_field_tag(
+        "settings[webhook_url]",
+        Setting.plugin_openproject_slack["webhook_url"],
+        container_class: '-xwide',
+        type: 'url',
+        pattern: "[ -~]*",
+        title: t("slack.only_ascii_chars_url"),
+      )
+      %>
     </div>
+  </div>
 
-    <span class="form--field-instructions">
-      <%# Creates the custom field if not yet present. %>
-      <% custom_field = OpenProject::Slack.project_custom_field %>
-      <%= t(
-        "slack.per_project_instructions_html",
-        custom_field_url: edit_admin_settings_project_custom_field_path(custom_field),
-        custom_field_name: custom_field.name
-      ) %>
-    </span>
-    <%= styled_submit_tag t(:button_apply), class: '-primary' %>
-  <% end %>
+  <span class="form--field-instructions">
+    <%# Creates the custom field if not yet present. %>
+    <% custom_field = OpenProject::Slack.project_custom_field %>
+    <%= t(
+      "slack.per_project_instructions_html",
+      custom_field_url: edit_admin_settings_project_custom_field_path(custom_field),
+      custom_field_name: custom_field.name
+    ) %>
+  </span>
 </div>

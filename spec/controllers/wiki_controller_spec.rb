@@ -28,9 +28,9 @@
 
 require 'spec_helper'
 
-describe WikiController, type: :controller do
-  let(:protocol) { "https" }
-  let(:host_name) { "test.openproject.com" }
+RSpec.describe WikiController, type: :controller do
+  let(:protocol) { "http" }
+  let(:host_name) { "test.host" }
 
   before do
     Role.delete_all # removing me makes us faster
@@ -38,7 +38,7 @@ describe WikiController, type: :controller do
     I18n.locale = :en
   end
 
-  describe 'actions', with_settings: { host_name: "test.openproject.com", protocol: "https" } do
+  describe 'actions', with_settings: { host_name: "test.host" } do
     let(:page_title) { "abc" }
 
     let(:expected_text) do
@@ -59,14 +59,7 @@ describe WikiController, type: :controller do
       @project.reload # to get the wiki into the proxy
 
       # creating pages
-      @existing_page = FactoryBot.create(
-        :wiki_page, wiki_id: @project.wiki.id, title: 'ExistingPage'
-      )
-
-      # creating page contents
-      FactoryBot.create(
-        :wiki_content, page_id: @existing_page.id, author_id: @user.id
-      )
+      @existing_page = create :wiki_page, wiki: @project.wiki, author: @user, title: 'ExistingPage'
 
       allow(::OpenProject::Slack).to receive(:default_webhook_url).and_return("https://foo.bar.com/webhook/42")
 
@@ -80,7 +73,10 @@ describe WikiController, type: :controller do
         post 'create',
              params: {
                project_id: @project,
-               content: { text: 'h1. abc', page: { title: 'abc' } }
+               page: {
+                 title: 'abc',
+                 text: 'h1. abc'
+               }
              }
 
         expect(response).to redirect_to action: 'show', project_id: @project, id: page_title
@@ -95,7 +91,10 @@ describe WikiController, type: :controller do
              params: {
                id: page_title,
                project_id: @project,
-               content: { text: 'h1. abc', page: { title: 'ExistingPage' } }
+               page: {
+                 title: 'ExistingPage',
+                 text: 'h1. abc'
+               }
              }
 
         expect(response).to redirect_to action: 'show', project_id: @project, id: @existing_page.slug
