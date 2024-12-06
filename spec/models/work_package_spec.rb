@@ -1,7 +1,7 @@
 require 'spec_helper'
 require 'slack-notifier'
 
-describe WorkPackage, with_settings: { "host_name" => "test.openproject.com", "protocol" => "https" } do
+RSpec.describe WorkPackage, with_settings: { "host_name" => "test.openproject.com" } do
   let(:user) { FactoryBot.create :admin, firstname: "Peter", lastname: "Putzig" }
   let(:project) { FactoryBot.create :project_with_types, name: "Parts", identifier: "parts" }
 
@@ -23,7 +23,7 @@ describe WorkPackage, with_settings: { "host_name" => "test.openproject.com", "p
 
     let(:update_service) { WorkPackages::UpdateService.new user: user, model: work_package }
     let(:expected_text) do
-      "[<https://test.openproject.com/projects/#{project.identifier}|#{project.name}>] #{user.name} updated <https://test.openproject.com/work_packages/#{work_package.id}|#{work_package.type.name} ##{work_package.id}: #{work_package.subject}>"
+      "[<http://test.openproject.com/projects/#{project.identifier}|#{project.name}>] #{user.name} updated <http://test.openproject.com/work_packages/#{work_package.id}|#{work_package.type.name} ##{work_package.id}: #{work_package.subject}>"
     end
 
     before do
@@ -52,7 +52,7 @@ describe WorkPackage, with_settings: { "host_name" => "test.openproject.com", "p
     let(:description) { "Tires should be round" }
 
     before do
-      allow(::OpenProject::Slack).to receive(:default_webhook_url).and_return("https://foo.bar.com/webhook/42")
+      allow(::OpenProject::Slack).to receive(:default_webhook_url).and_return("http://foo.bar.com/webhook/42")
     end
 
     let(:create_service) { WorkPackages::CreateService.new user: user }
@@ -66,7 +66,7 @@ describe WorkPackage, with_settings: { "host_name" => "test.openproject.com", "p
 
         text = opts[:text]
 
-        expect(text).to start_with("[<https://test.openproject.com/projects/#{project.identifier}|#{project.name}>] #{user.name} created <https://test.openproject.com/work_packages/")
+        expect(text).to start_with("[<http://test.openproject.com/projects/#{project.identifier}|#{project.name}>] #{user.name} created <http://test.openproject.com/work_packages/")
         expect(text).to match /.*\/work_packages\/\d+\|#{type.name} #\d+: #{subject}>$/
       end
     end
