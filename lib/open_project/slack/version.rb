@@ -1,5 +1,5 @@
 module OpenProject
   module Slack
-    VERSION = "14.4.0"
+    VERSION = "15.1.0"
   end
 end
