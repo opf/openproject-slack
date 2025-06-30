@@ -46,7 +46,7 @@ class SlackNotificationJob < ApplicationJob
     end
 
     notifier(webhook_url: webhook_url).post params
-  rescue Slack::Notifier::APIError => e
+  rescue Slack::Notifier::APIError, Socket::ResolutionError => e
     OpenProject.logger.warn "Error posting to Slack: #{e.message}"
   end
 
