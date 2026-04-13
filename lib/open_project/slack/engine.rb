@@ -23,6 +23,7 @@ module OpenProject::Slack
       menu :admin_menu,
            :slack_settings,
            { controller: '/admin/settings', action: :show_plugin, id: :openproject_slack },
+           parent: :admin_integrations,
            caption: :label_slack_plugin,
            icon: 'op-logo-slack',
            if: ->(*) { User.current.admin? && ::OpenProject::Slack.enabled? }
