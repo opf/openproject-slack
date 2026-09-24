@@ -1,27 +1,28 @@
-<input type="hidden" name="settings[enabled]" value="1"/>
+<%=
+  settings_primer_form_with(scope: :settings, url: update_url, method: :post) do |f|
+    render_inline_settings_form(f) do |form|
+      form.hidden(name: :enabled, value: 1)
 
-<div class="form--field">
-  <%= styled_label_tag("settings[webhook_url]", t("slack.default_webhook_url")) %>
-  <div class="form--field-container">
-    <%=
-    styled_text_field_tag(
-      "settings[webhook_url]",
-      Setting.plugin_openproject_slack["webhook_url"],
-      container_class: '-xwide',
-      type: 'url',
-      pattern: "[ -~]*",
-      title: t("slack.only_ascii_chars_url"),
-    )
-    %>
-  </div>
-</div>
+      # Creates the custom field if not yet present.
+      custom_field = ::OpenProject::Slack.project_custom_field
 
-<span class="form--field-instructions">
-  <%# Creates the custom field if not yet present. %>
-  <% custom_field = OpenProject::Slack.project_custom_field %>
-  <%= t(
-    "slack.per_project_instructions_html",
-    custom_field_url: edit_admin_settings_project_custom_field_path(custom_field),
-    custom_field_name: custom_field.name
-  ) %>
-</span>
+      form.text_field(
+        name: :webhook_url,
+        label: I18n.t("slack.default_webhook_url"),
+        value: Setting.plugin_openproject_slack["webhook_url"],
+        disabled: false,
+        type: :url,
+        pattern: "[ -~]*",
+        title: I18n.t("slack.only_ascii_chars_url"),
+        input_width: :xxlarge,
+        caption: ApplicationController.helpers.t(
+          "slack.per_project_instructions_html",
+          custom_field_url: url_helpers.edit_admin_settings_project_custom_field_path(custom_field),
+          custom_field_name: custom_field.name
+        )
+      )
+
+      form.submit(label: I18n.t(:button_apply))
+    end
+  end
+%>
